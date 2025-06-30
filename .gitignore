@@ -1,3 +1,4 @@
 .wp-env.override.json
 node_modules/
 dist/
+vendor/
