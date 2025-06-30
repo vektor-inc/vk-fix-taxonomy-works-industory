@@ -1,0 +1,1 @@
+# vk-fix-taxonomy-work-industory
