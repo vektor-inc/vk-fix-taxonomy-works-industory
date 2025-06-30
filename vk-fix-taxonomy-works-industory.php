@@ -7,61 +7,81 @@ Version: 1.0.0
 License: GPLv2
 */
 
-function vkftwi_should_deactivate_plugin() {
-	global $wpdb;
-	$old_taxonomy = 'works-Industry';
-	$new_taxonomy = 'works-industry';
-	$old_exists = $wpdb->get_var( $wpdb->prepare(
-		"SELECT COUNT(*) FROM {$wpdb->term_taxonomy} WHERE taxonomy = %s",
-		$old_taxonomy
-	) );
-	$new_exists = $wpdb->get_var( $wpdb->prepare(
-		"SELECT COUNT(*) FROM {$wpdb->term_taxonomy} WHERE taxonomy = %s",
-		$new_taxonomy
-	) );
-	return ( !$old_exists && $new_exists );
-}
+// function vkftwi_should_deactivate_plugin() {
+// 	global $wpdb;
+// 	$old_taxonomy = 'works-Industry';
+// 	$new_taxonomy = 'works-industry';
+// 	$old_exists = $wpdb->get_var( $wpdb->prepare(
+// 		"SELECT COUNT(*) FROM {$wpdb->term_taxonomy} WHERE taxonomy = %s",
+// 		$old_taxonomy
+// 	) );
+// 	$new_exists = $wpdb->get_var( $wpdb->prepare(
+// 		"SELECT COUNT(*) FROM {$wpdb->term_taxonomy} WHERE taxonomy = %s",
+// 		$new_taxonomy
+// 	) );
+// 	return ( !$old_exists && $new_exists );
+// }
 
-function vkftwi_deactivate_if_needed() {
-	if ( vkftwi_should_deactivate_plugin() ) {
-		if ( is_admin() && current_user_can('activate_plugins') ) {
-			deactivate_plugins( plugin_basename(__FILE__) );
-			add_action('admin_notices', function() {
-				echo '<div class="notice notice-success is-dismissible"><p>"works-Industry" が存在せず "works-industry" が存在するため、VK Fix Taxonomy Works Industory プラグインは自動停止されました。</p></div>';
-			});
-		}
-	}
-}
-add_action( 'admin_init', 'vkftwi_deactivate_if_needed', 1 );
+// function vkftwi_deactivate_if_needed() {
+// 	if ( vkftwi_should_deactivate_plugin() ) {
+// 		if ( is_admin() && current_user_can('activate_plugins') ) {
+// 			deactivate_plugins( plugin_basename(__FILE__) );
+// 			add_action('admin_notices', function() {
+// 				echo '<div class="notice notice-success is-dismissible"><p>"works-Industry" が存在せず "works-industry" が存在するため、VK Fix Taxonomy Works Industory プラグインは自動停止されました。</p></div>';
+// 			});
+// 		}
+// 	}
+// }
+// add_action( 'admin_init', 'vkftwi_deactivate_if_needed', 1 );
 
+
+/**
+ * データベース上に works-Industry というタクソノミーが存在する場合、works-industry に書き換える処理を行う
+ */
 function fix_taxonomy_slug_case() {
 	global $wpdb;
 	$old_taxonomy = 'works-Industry';
 	$new_taxonomy = 'works-industry';
-	$term_taxonomy_id = 7;
 
-	// 該当レコードがあるか確認
-	$current = $wpdb->get_var( $wpdb->prepare(
-		"SELECT taxonomy FROM {$wpdb->term_taxonomy} WHERE term_taxonomy_id = %d",
-		$term_taxonomy_id
+	// まず works-Industry が存在するか確認
+	$count = $wpdb->get_var( $wpdb->prepare(
+		"SELECT COUNT(*) FROM $wpdb->term_taxonomy WHERE taxonomy = %s",
+		$old_taxonomy
 	) );
+	if ( ! $count ) {
+		return 'No works-Industry taxonomy found.';
+	}
 
-	if ( $current === $old_taxonomy ) {
-		$updated = $wpdb->update(
-			$wpdb->term_taxonomy,
-			[ 'taxonomy' => $new_taxonomy ],
-			[ 'term_taxonomy_id' => $term_taxonomy_id ]
-		);
+	// works-Industry を全て works-industry に書き換え
+	$updated = $wpdb->update(
+		$wpdb->term_taxonomy,
+		[ 'taxonomy' => $new_taxonomy ],
+		[ 'taxonomy' => $old_taxonomy ]
+	);
 
-		if ( $updated !== false ) {
-			clean_term_cache( $term_taxonomy_id );
-			flush_rewrite_rules();
-			echo "Taxonomy slug updated successfully.";
-		} else {
-			echo "Failed to update taxonomy slug.";
-		}
+	if ( $updated !== false && $updated > 0 ) {
+		clean_term_cache( 0, $new_taxonomy );
+		flush_rewrite_rules();
+		return true;
 	} else {
-		echo "No matching taxonomy found.";
+		return 'No matching taxonomy found or update failed.';
 	}
 }
-add_action( 'admin_init', 'fix_taxonomy_slug_case', 20 );
+// add_action( 'admin_init', 'fix_taxonomy_slug_case', 20 );
+
+/**
+ * works-Industry というタクソノミーが存在していたらダッシュボードにアラートを表示する
+ */
+function vkftwi_is_old_works_industory_exist() {
+	global $wpdb;
+	$old_taxonomy = 'works-Industry';
+	$count = $wpdb->get_var( $wpdb->prepare(
+		"SELECT COUNT(*) FROM $wpdb->term_taxonomy WHERE taxonomy = %s",
+		$old_taxonomy
+	) );
+	if ( $count ) {
+		return true;
+	} else {
+		return false;
+	}
+}
