@@ -34,40 +34,41 @@ License: GPLv2
 // }
 // add_action( 'admin_init', 'vkftwi_deactivate_if_needed', 1 );
 
-
 /**
- * データベース上に works-Industry というタクソノミーが存在する場合、works-industry に書き換える処理を行う
+ * works-Industry というタクソノミーが存在していたら works-industry に書き換え処理を実行する関数
  */
-function fix_taxonomy_slug_case() {
-	global $wpdb;
-	$old_taxonomy = 'works-Industry';
-	$new_taxonomy = 'works-industry';
+function vkftwi_replace_old_works_industory_if_exist() {
+	if ( vkftwi_is_old_works_industory_exist() ) {
+		global $wpdb;
+		$old_taxonomy = 'works-Industry';
+		$new_taxonomy = 'works-industry';
 
-	// まず works-Industry が存在するか確認
-	$count = $wpdb->get_var( $wpdb->prepare(
-		"SELECT COUNT(*) FROM $wpdb->term_taxonomy WHERE taxonomy = %s",
-		$old_taxonomy
-	) );
-	if ( ! $count ) {
-		return 'No works-Industry taxonomy found.';
-	}
+		// まず works-Industry が存在するか確認
+		$count = $wpdb->get_var( $wpdb->prepare(
+			"SELECT COUNT(*) FROM $wpdb->term_taxonomy WHERE taxonomy = %s",
+			$old_taxonomy
+		) );
+		if ( ! $count ) {
+			return 'No works-Industry taxonomy found.';
+		}
 
-	// works-Industry を全て works-industry に書き換え
-	$updated = $wpdb->update(
-		$wpdb->term_taxonomy,
-		[ 'taxonomy' => $new_taxonomy ],
-		[ 'taxonomy' => $old_taxonomy ]
-	);
+		// works-Industry を全て works-industry に書き換え
+		$updated = $wpdb->update(
+			$wpdb->term_taxonomy,
+			[ 'taxonomy' => $new_taxonomy ],
+			[ 'taxonomy' => $old_taxonomy ]
+		);
 
-	if ( $updated !== false && $updated > 0 ) {
-		clean_term_cache( 0, $new_taxonomy );
-		flush_rewrite_rules();
-		return true;
-	} else {
-		return 'No matching taxonomy found or update failed.';
+		if ( $updated !== false && $updated > 0 ) {
+			clean_term_cache( 0, $new_taxonomy );
+			flush_rewrite_rules();
+			return true;
+		} else {
+			return 'No matching taxonomy found or update failed.';
+		}
 	}
 }
-// add_action( 'admin_init', 'fix_taxonomy_slug_case', 20 );
+add_action( 'admin_init', 'vkftwi_replace_old_works_industory_if_exist', 15 );
 
 /**
  * works-Industry というタクソノミーが存在しているかどうかを確認する関数
@@ -83,9 +84,5 @@ function vkftwi_is_old_works_industory_exist() {
 		"SELECT COUNT(*) FROM $wpdb->term_taxonomy WHERE taxonomy = %s",
 		$old_taxonomy
 	) );
-	if ( $count ) {
-		return true;
-	} else {
-		return false;
-	}
+	return (bool) $count;
 }
