@@ -1,38 +1,11 @@
 <?php
 /*
 Plugin Name: VK Fix Taxonomy Works Industory
-Description: 
+Description: 2025年6月30日以前に VK FullSite Installer から X-T9 Pro ビジネスのサイトをインポートしたサイトで、カスタム投稿タイプ制作実績（works）のカスタムタクソノミー works-Industry を使用している場合に謝動作を引き起こすため、works-Industry をworks-industry に書き換えるためのプラグインです。一度有効化してダッシュボードを開いたら処理が完了するので停止・削除してください。
 Author: Vektor,Inc.
 Version: 1.0.0
 License: GPLv2
 */
-
-// function vkftwi_should_deactivate_plugin() {
-// 	global $wpdb;
-// 	$old_taxonomy = 'works-Industry';
-// 	$new_taxonomy = 'works-industry';
-// 	$old_exists = $wpdb->get_var( $wpdb->prepare(
-// 		"SELECT COUNT(*) FROM {$wpdb->term_taxonomy} WHERE taxonomy = %s",
-// 		$old_taxonomy
-// 	) );
-// 	$new_exists = $wpdb->get_var( $wpdb->prepare(
-// 		"SELECT COUNT(*) FROM {$wpdb->term_taxonomy} WHERE taxonomy = %s",
-// 		$new_taxonomy
-// 	) );
-// 	return ( !$old_exists && $new_exists );
-// }
-
-// function vkftwi_deactivate_if_needed() {
-// 	if ( vkftwi_should_deactivate_plugin() ) {
-// 		if ( is_admin() && current_user_can('activate_plugins') ) {
-// 			deactivate_plugins( plugin_basename(__FILE__) );
-// 			add_action('admin_notices', function() {
-// 				echo '<div class="notice notice-success is-dismissible"><p>"works-Industry" が存在せず "works-industry" が存在するため、VK Fix Taxonomy Works Industory プラグインは自動停止されました。</p></div>';
-// 			});
-// 		}
-// 	}
-// }
-// add_action( 'admin_init', 'vkftwi_deactivate_if_needed', 1 );
 
 /**
  * works-Industry というタクソノミーが存在していたら works-industry に書き換え処理を実行する関数
@@ -86,3 +59,54 @@ function vkftwi_is_old_works_industory_exist() {
 	) );
 	return (bool) $count;
 }
+
+/**
+ * 投稿タイプマネージャーの業績タクソノミーのスラッグを works-industryに書き換える
+ */
+function vkftwi_tax_setting_replace(){
+	// 投稿 idが79 に紐づいているカスタムフィールド名"veu_taxonomy" の値を取得
+	$meta_value = get_post_meta( 79, 'veu_taxonomy', true );
+	$meta_value[2]['slug'] = 'works-industry'; // slugをworks-industryに書き換え
+	// 変更した値を再度保存
+	update_post_meta( 79, 'veu_taxonomy', $meta_value );
+}
+add_action( 'admin_init', 'vkftwi_tax_setting_replace' );
+
+/**
+ * works-sidebar テンプレートの内容を更新
+ */
+function vkftwi_fix_works_sidebar() {
+
+	// 投稿idが90の投稿を取得
+	$sidebar_works = get_post( 90 );
+	// コンテンツ内に 'works-Industry' が含まれている場合は 'works-industry' に置き換える
+	if ( strpos( $sidebar_works->post_content, 'works-Industry' ) !== false ) {
+		$sidebar_works->post_content = str_replace( 'works-Industry', 'works-industry', $sidebar_works->post_content );
+		// 更新
+		wp_update_post( $sidebar_works );
+	}
+	// コンテンツ内に '実績カーカイブ' が含まれている場合は '実績アーカイブ' に置き換える
+	if ( strpos( $sidebar_works->post_content, '実績カーカイブ' ) !== false ) {
+		$sidebar_works->post_content = str_replace( '実績カーカイブ', '実績アーカイブ', $sidebar_works->post_content );
+		// 更新
+		wp_update_post( $sidebar_works );
+	}
+
+}
+add_action( 'admin_init', 'vkftwi_fix_works_sidebar' );
+
+/**
+ * works-taxonomy パターンの内容を更新
+ */
+function vkftwi_fix_works_taxonomy() {
+
+	$works_taxonomy = get_post( 159 );
+	// コンテンツ内に 'works-Industry' が含まれている場合は 'works-industry' に置き換える
+	if ( strpos( $works_taxonomy->post_content, 'works-Industry' ) !== false ) {
+		$works_taxonomy->post_content = str_replace( 'works-Industry', 'works-industry', $works_taxonomy->post_content );
+		// 更新
+		wp_update_post( $works_taxonomy );
+	}
+
+}
+add_action( 'admin_init', 'vkftwi_fix_works_taxonomy' );
