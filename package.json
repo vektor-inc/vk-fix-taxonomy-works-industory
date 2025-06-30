@@ -1,0 +1,8 @@
+{
+  "name": "vk-fix-taxonomy-works-industory",
+  "version": "1.0.0",
+  "scripts": {
+    "dist": "rm -rf ./dist && mkdir -p ./dist/vk-fix-taxonomy-works-industory && cp ./vk-fix-taxonomy-works-industory.php ./dist/vk-fix-taxonomy-works-industory/ && cp ./README.md ./dist/vk-fix-taxonomy-works-industory/",
+    "zip": "npm run dist && cd dist && zip -r vk-fix-taxonomy-works-industory.zip vk-fix-taxonomy-works-industory"
+  }
+}
