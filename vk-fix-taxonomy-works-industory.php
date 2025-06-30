@@ -70,7 +70,11 @@ function fix_taxonomy_slug_case() {
 // add_action( 'admin_init', 'fix_taxonomy_slug_case', 20 );
 
 /**
- * works-Industry というタクソノミーが存在していたらダッシュボードにアラートを表示する
+ * works-Industry というタクソノミーが存在しているかどうかを確認する関数
+ * 
+ * @return bool
+ * true: 存在する
+ * false: 存在しない
  */
 function vkftwi_is_old_works_industory_exist() {
 	global $wpdb;
